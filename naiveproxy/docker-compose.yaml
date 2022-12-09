@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  naive:
+  naiveproxy:
     container_name: naiveproxy
     image: wxxxcxx/naiveproxy:latest
     environment:
@@ -30,4 +30,6 @@ services:
 volumes:
   alist:
 
-  
+networks:
+  default:
+    name: ${NETWORK:-naiveproxy}
