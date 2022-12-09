@@ -1,0 +1,6 @@
+/data/**/*
+!/data/attachments
+!/data/config.json
+!/data/db.sqlite3
+!/data/rsa_key.*
+!/data/sends

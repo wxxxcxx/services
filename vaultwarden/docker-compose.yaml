@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+  vaultwarden:
+    container_name: vaultwarden
+    image: vaultwarden/server:latest
+    restart: unless-stopped
+    environment:
+      - WEBSOCKET_ENABLED=true
+      - SIGNUPS_ALLOWED=false
+      #- ADMIN_TOKEN=dxh4mw$$c
+    volumes:
+      - ${DATA:?}/vaultwarden/data:/data
+
+  vaultwarden_backup:
+    image: wxxxcxx/restic:latest
+    container_name: vaultwarden-backup
+    restart: unless-stopped
+    hostname: restic
+    environment:
+      - RESTIC_REPOSITORY=rclone:default:/Apps/restic/vaultwarden
+    volumes:
+      - ./config:/config
+      - ${DATA:?}/vaultwarden/data:/data
+
+  tts:
+    container_name: tts
+    image: wxxxcxx/ms-ra-forwarder:latest
+    restart: unless-stopped
+    environment:
+      - TOKEN=ms-ra-forwarder
+
+  # Infrastructure
+
+  gateway:
+    container_name: nginx-proxy-manager
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    environment:
+      DISABLE_IPV6: 'true'
+    ports:
+      - '80:80'
+      - '443:443'
+      - '8080:81'
+    volumes:
+      - ${DATA:?}/gateway/data:/data
+      - ${DATA:?}/gateway/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - vaultwarden
+    healthcheck:
+      test: [ "CMD", "/bin/check-health" ]
+      interval: 10s
+      timeout: 3s
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --interval 300
+
+networks:
+  default:
+    name: ${NETWORK:-vaultwarden}
